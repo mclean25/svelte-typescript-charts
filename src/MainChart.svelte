@@ -1,23 +1,29 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Chart from "chart.js";
-  import * as salesData from "../data/timeseries.json";
-  import * as goalData from "../data/targetTimeseries.json";
-
-  console.log("sales", salesData);
-  console.log("goal", goalData);
+  import { Chart } from "chart.js";
+  import { goal, actual, actualLastYear } from "./data";
 
   const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-  function formatTooltip(tooltipItem, data) {
-    return formatNumber(tooltipItem.yLabel);
+  function formatLabel(tooltipItem, chart) {
+    const label = chart.datasets[tooltipItem.datasetIndex].label;
+    return label + ":  " + formatNumber(tooltipItem.value);
+  }
+
+  function formatLabelColor(tooltipItem, chart) {
+    var color =
+      chart.config.data.datasets[tooltipItem.datasetIndex].borderColor;
+    return {
+      borderColor: color,
+      backgroundColor: color,
+    };
   }
 
   function formatAxis(label, index, labels) {
     return formatNumber(label);
   }
 
-  function formatNumber(num: number): string {
+  function formatNumber(num) {
     return (
       "$" +
       roundToTwo(num / 1000)
@@ -31,26 +37,38 @@
     const ctx = (<HTMLCanvasElement>(
       document.getElementById("myChart")
     )).getContext("2d");
-    window.chart = new Chart(ctx, {
+    var chart = new Chart(ctx, {
       type: "line",
       data: {
         datasets: [
           {
             label: "Goal",
-            data: goalData.goal,
+            data: goal.goal,
             pointRadius: 0,
+            borderColor: "rgb(114, 114, 114)",
             fill: false,
             borderDash: [10, 5],
+            borderWidth: 1,
           },
           {
-            label: "My Data",
-            data: salesData.sales,
+            label: "2021",
+            data: actual.sales,
+            fill: false,
             borderColor: "rgb(43, 51, 96)",
             borderWidth: 2,
-            lineTension: 1,
             pointRadius: 0,
             pointHoverRadius: 4,
-            pointBorderWidth: 4, // point border width
+            pointBorderWidth: 4,
+          },
+          {
+            label: "2020",
+            fill: false,
+            data: actualLastYear.sales,
+            borderColor: "rgb(189, 198, 228)",
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointBorderWidth: 4,
           },
         ],
       },
@@ -60,10 +78,17 @@
           animationDuration: 0, // setting this back to the default (400) will break it
         },
         tooltips: {
-          mode: "x",
+          mode: "index",
           intersect: false,
+          position: "nearest",
+          titleSpacing: 5,
+          bodySpacing: 10,
+          xPadding: 10,
+          yPadding: 10,
+          caretPadding: 5,
           callbacks: {
-            label: formatTooltip,
+            label: formatLabel,
+            labelColor: formatLabelColor,
           },
         },
         scales: {
